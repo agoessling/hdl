@@ -1,0 +1,5 @@
+build -c opt
+build --cxxopt=-std=c++17
+build --cxxopt=-fdiagnostics-color=always
+
+test --test_output=errors --test_summary=terse --action_env="GTEST_COLOR=1"
