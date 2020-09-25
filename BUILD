@@ -6,7 +6,7 @@ verilator_cc_test(
     vsrcs = ["strobe_div.sv"],
     csrcs = ["test_strobe_div.cpp"],
     params = {
-        "DIV": [1, 2, 6, 7, 8, 100],
+        "DIV": [2, 6, 7, 8, 100],
     },
 )
 
