@@ -3,7 +3,8 @@
 module strobe_div #(
     int DIV /*verilator public*/ = 2
 ) (
-    input wire i_clk,
+    input logic i_clk,
+    input logic i_reset,
     output logic o_strobe
 );
 
@@ -14,7 +15,8 @@ module strobe_div #(
   generate
     if (DIV == 1) begin : div1
       // verilator lint_off UNUSED
-      wire unused = i_clk;
+      wire unused1 = i_clk;
+      wire unused2 = i_reset;
       // verilator lint_on UNUSED
       assign o_strobe = 1'b1;
 
@@ -27,7 +29,7 @@ module strobe_div #(
       end
 
       always_ff @(posedge i_clk) begin
-        if (counter == WIDTH'(DIV - 1)) begin
+        if (counter == WIDTH'(DIV - 1) || i_reset) begin
           counter <= 0;
         end else begin
           counter <= counter + 1;
@@ -37,4 +39,8 @@ module strobe_div #(
       assign o_strobe = counter == WIDTH'(DIV - 1);
     end
   endgenerate
+
+`ifdef FORMAL
+
+`endif
 endmodule

@@ -29,6 +29,15 @@ TEST(StrobeDivTests, StrobeSequence) {
 
   int div = tb.module_.strobe_div->DIV;
 
+  // Check reset halfway through count.
+  for (int i = 0; i < div / 2; ++i) {
+    tb.tick();
+  }
+
+  tb.module_.i_reset = 1;
+  tb.tick();
+  tb.module_.i_reset = 0;
+
   for (int i = 0; i < 3 * div; ++i) {
     int strobe = i % div == div - 1 ? 1 : 0;
     ASSERT_EQ(tb.module_.o_strobe, strobe) << "Timestep: " << i;
