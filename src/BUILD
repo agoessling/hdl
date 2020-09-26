@@ -1,5 +1,6 @@
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
-load("//:verilator_cc_test.bzl", "verilator_cc_test")
+load("//tools:verilator_cc_test.bzl", "verilator_cc_test")
+load("//tools:symbiyosys_test.bzl", "symbiyosys_test")
 
 verilator_cc_test(
     name = "strobe_div",
@@ -13,4 +14,11 @@ verilator_cc_test(
 cc_library(
     name = "test_bench",
     hdrs = ["test_bench.h"],
+)
+
+symbiyosys_test(
+    name = "prove_strobe_div",
+    srcs = ["strobe_div.sv"],
+    top = "strobe_div",
+    modes = ["bmc", "prove"],
 )
