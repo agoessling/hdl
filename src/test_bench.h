@@ -20,7 +20,6 @@ template<class MODULE> class TestBench {
   public:
     TestBench(std::optional<int> max_counts = std::nullopt)
         : tick_count_(0), max_counts_(max_counts) {
-      Verilated::traceEverOn(true);
       // Evaluate so initial values are correct.
       module_.eval();
     }
@@ -28,6 +27,7 @@ template<class MODULE> class TestBench {
 
     void OpenTrace(const std::string &filename) {
       if (!trace_.isOpen()) {
+        Verilated::traceEverOn(true);
         module_.trace(&trace_, 99);
         trace_.open(filename.c_str());
       }
@@ -35,7 +35,14 @@ template<class MODULE> class TestBench {
 
     void CloseTrace(void) {
       if (trace_.isOpen()) {
+        trace_.flush();
         trace_.close();
+      }
+    }
+
+    virtual void tick(int count) {
+      for (int i = 0; i < count; ++i) {
+        tick();
       }
     }
 
