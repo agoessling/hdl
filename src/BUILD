@@ -3,6 +3,18 @@ load("//tools:verilator_cc_test.bzl", "verilator_cc_test")
 load("//tools:symbiyosys_test.bzl", "symbiyosys_test")
 
 verilator_cc_test(
+    name = "uart_tx",
+    vsrcs = [
+        "uart_tx.sv",
+        "strobe_div.sv",
+    ],
+    csrcs = ["test_uart_tx.cpp"],
+    params = {
+        "BAUD_DIV": [3],
+    },
+)
+
+verilator_cc_test(
     name = "strobe_div",
     vsrcs = ["strobe_div.sv"],
     csrcs = ["test_strobe_div.cpp"],
