@@ -1,4 +1,5 @@
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
+load("//tools:gtkwave_trace.bzl", "gtkwave_trace")
 
 def _tally_repetition(values, i):
     before = 1
@@ -54,6 +55,12 @@ def verilator_cc_test(name, vsrcs, csrcs, vdeps = [], cdeps = [], params = {"NON
             deps = cdeps + [":" + verilator_lib_name, "//src:test_bench", "@gtest//:gtest"],
             linkstatic = True,
             tags = [name],
+        )
+
+        gtkwave_trace(
+            name = "trace_" + verilator_lib_name,
+            test = ":test_" + verilator_lib_name,
+            testonly = True,
         )
 
     native.test_suite(
