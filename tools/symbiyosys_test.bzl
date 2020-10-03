@@ -1,37 +1,24 @@
 def _symbiyosys_test_impl(ctx):
-    config_str = ""
-    config_str = "[tasks]\n"
-    tasks = ["task{}".format(i) for i in range(len(ctx.attr.modes))]
-    config_str += "\n".join(tasks)
-    config_str += "\n\n"
+    prefix = "${{RUNFILES_DIR}}/{}/".format(ctx.workspace_name)
+    shell_cmd = [
+        prefix + ctx.executable._symbiyosys_wrapper.short_path,
+        "--modes",
+        " ".join(ctx.attr.modes),
+        "--engine",
+        ctx.attr.engine,
+        "--top",
+        ctx.attr.top,
+        " ".join([prefix + f.short_path for f in ctx.files.srcs]),
+        "$@",
+    ]
 
-    config_str += "[options]\n"
-    options = ["task{}: mode {}".format(i, mode) for i, mode in enumerate(ctx.attr.modes)]
-    config_str += "\n".join(options)
-    config_str += "\n\n"
-
-    config_str += "[engines]\n"
-    config_str += "\n".join(ctx.attr.engines)
-    config_str += "\n\n"
-
-    config_str += "[script]\n"
-    for f in ctx.files.srcs:
-        sv_flag = " -sv" if f.extension == "sv" else ""
-        config_str += "read -formal{} {}\n".format(sv_flag, f.basename)
-    config_str += "prep -top {}\n".format(ctx.attr.top)
-    config_str += "\n"
-
-    config_str += "[files]\n"
-    config_str += "\n".join([f.short_path for f in ctx.files.srcs])
-
-    config = ctx.actions.declare_file("{}.sby".format(ctx.label.name))
-    ctx.actions.write(config, config_str)
-
-    shell_cmd = "sby -f {}".format(config.short_path)
     script = ctx.actions.declare_file("{}.sh".format(ctx.label.name))
-    ctx.actions.write(script, shell_cmd, is_executable = True)
+    ctx.actions.write(script, ' '.join(shell_cmd), is_executable = True)
 
-    runfiles = ctx.runfiles(files = [config] + ctx.files.srcs)
+    runfiles = ctx.runfiles(
+        files = ctx.files.srcs,
+        transitive_files = ctx.attr._symbiyosys_wrapper[DefaultInfo].default_runfiles.files,
+    )
     return [DefaultInfo(executable = script, runfiles = runfiles)]
 
 
@@ -54,11 +41,81 @@ symbiyosys_test = rule(
             mandatory = True,
             allow_empty = False,
         ),
-        "engines": attr.string_list(
-            doc = "Verification engines.",
-            default = ["smtbmc"],
-            allow_empty = False,
+        "engine": attr.string(
+            doc = "Verification engine.",
+            default = "smtbmc",
+        ),
+        "_symbiyosys_wrapper": attr.label(
+            doc = "Symbiyosys wrapper script.",
+            default = Label("//tools:symbiyosys_wrapper"),
+            executable = True,
+            cfg = "target",
         ),
     },
     test = True,
+)
+
+
+def _symbiyosys_trace_impl(ctx):
+    # Run test to generate VCD directory / files.
+    vcd_dir = ctx.actions.declare_directory("{}_vcd".format(ctx.label.name))
+
+    args = ctx.actions.args()
+    args.add("--vcd_dir")
+    args.add(vcd_dir.path)
+    args.add("--ignore_failure")
+
+    ctx.actions.run(outputs = [vcd_dir], executable = ctx.executable.test, arguments = [args],
+                    env = {
+                        "RUNFILES_DIR": ctx.executable.test.path + ".runfiles",
+                        "PATH": "/usr/local/bin:/usr/bin:/bin"
+                    })
+
+    # Wrap gtk_wrapper in order to bake in arguments.
+    shell_cmd = [
+        ctx.executable._gtkwave_wrapper.short_path,
+        "--tcl_template",
+        ctx.file._tcl_template.short_path,
+        "--tcl_output",
+        ctx.label.name + ".tcl",
+        "--vcd_dir",
+        vcd_dir.short_path,
+        "--open_level",
+        "1",
+        "$@",
+    ]
+    shell_script = ctx.actions.declare_file(ctx.label.name + ".sh")
+    ctx.actions.write(shell_script, ' '.join(shell_cmd), is_executable = True)
+
+    runfiles = ctx.runfiles(files = [ctx.file._tcl_template, vcd_dir])
+
+    for attr in [ctx.attr._gtkwave_wrapper, ctx.attr.test]:
+      runfiles = runfiles.merge(attr[DefaultInfo].default_runfiles)
+
+    return [DefaultInfo(executable = shell_script, runfiles = runfiles)]
+
+
+symbiyosys_trace = rule(
+    implementation = _symbiyosys_trace_impl,
+    doc = "View VCD trace from Symbiyosys.",
+    attrs = {
+        "test": attr.label(
+            doc = "Test target to produce VCD file.",
+            mandatory = True,
+            executable = True,
+            cfg = "target",
+        ),
+        "_tcl_template": attr.label(
+            doc = "Tcl file for GTKwave initialization.",
+            default = Label("//tools:gtkwave.tcl.template"),
+            allow_single_file = True,
+        ),
+        "_gtkwave_wrapper": attr.label(
+            doc = "GTKwave wrapper script.",
+            default = Label("//tools:gtkwave_wrapper"),
+            executable = True,
+            cfg = "target",
+        ),
+    },
+    executable = True,
 )

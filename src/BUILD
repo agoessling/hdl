@@ -1,6 +1,6 @@
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
 load("//tools:verilator_cc_test.bzl", "verilator_cc_test")
-load("//tools:symbiyosys_test.bzl", "symbiyosys_test")
+load("//tools:symbiyosys_test.bzl", "symbiyosys_test", "symbiyosys_trace")
 
 verilator_cc_test(
     name = "uart_tx",
@@ -32,5 +32,12 @@ symbiyosys_test(
     name = "prove_strobe_div",
     srcs = ["strobe_div.sv"],
     top = "strobe_div",
-    modes = ["bmc", "prove"],
+    modes = ["prove", "cover"],
+    engine = "smtbmc",
+)
+
+symbiyosys_trace(
+    name = "prove_strobe_div_trace",
+    test = ":prove_strobe_div",
+    testonly = True,
 )

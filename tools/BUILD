@@ -5,3 +5,9 @@ py_binary(
     srcs = ["gtkwave_wrapper.py"],
     visibility = ["//visibility:public"],
 )
+
+py_binary(
+    name = "symbiyosys_wrapper",
+    srcs = ["symbiyosys_wrapper.py"],
+    visibility = ["//visibility:public"],
+)

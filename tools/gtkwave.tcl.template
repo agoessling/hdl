@@ -74,14 +74,14 @@ proc filter_param {signals} {
   return $output
 }
 
-proc add_signals {} {
+proc add_signals {level} {
   set inputs {{} {} {}}
   set outputs {{} {} {}}
   set params {}
   set remainder {}
 
   foreach sig [get_signals] {
-    if {[get_level $sig] != 2} {
+    if {[get_level $sig] != $level} {
       continue
     }
 
@@ -123,7 +123,7 @@ proc add_signals {} {
 
 for {set i 0} {$i < [gtkwave::getNumTabs]} {incr i} {
   gtkwave::setTabActive $i
-  add_signals
+  add_signals @OPEN_LEVEL@
   gtkwave::/Edit/UnHighlight_All
   gtkwave::/Time/Zoom/Zoom_Full
 }

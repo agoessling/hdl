@@ -14,6 +14,8 @@ def _gtkwave_trace_impl(ctx):
         ctx.label.name + ".tcl",
         "--vcd_dir",
         vcd_dir.short_path,
+        "--open_level",
+        "2",
         "$@",
     ]
     shell_script = ctx.actions.declare_file(ctx.label.name + ".sh")

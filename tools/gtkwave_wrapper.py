@@ -23,6 +23,8 @@ def main():
   parser.add_argument('--tcl_output', required=True,
                       help='Tcl filename to which to write the GTKwave configuration.')
   parser.add_argument('--vcd_dir', required=True, help='Directory of VCD files.')
+  parser.add_argument('--open_level', type=int, default=2,
+                      help='Hierarchy level to display by default.')
   parser.add_argument('tests', nargs='*', help='Test names to display. Globs allowed.')
 
   args = parser.parse_args()
@@ -36,7 +38,8 @@ def main():
     vcd_files.extend(glob.glob(path))
 
   load_files = '\n'.join(['gtkwave::loadFile "{:s}"'.format(f) for f in vcd_files])
-  expand_template(args.tcl_template, args.tcl_output, {'@LOAD_FILES@': load_files})
+  expand_template(args.tcl_template, args.tcl_output,
+      {'@LOAD_FILES@': load_files, '@OPEN_LEVEL@': str(args.open_level)})
 
   gtkwave_args = [
       'gtkwave',
