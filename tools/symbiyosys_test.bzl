@@ -8,6 +8,8 @@ def _symbiyosys_test_impl(ctx):
         ctx.attr.engine,
         "--top",
         ctx.attr.top,
+        "--depth",
+        str(ctx.attr.depth),
         " ".join([prefix + f.short_path for f in ctx.files.srcs]),
         "$@",
     ]
@@ -40,6 +42,10 @@ symbiyosys_test = rule(
             doc = "Modes of verification.",
             mandatory = True,
             allow_empty = False,
+        ),
+        "depth": attr.int(
+            doc = "Solver depth.",
+            default = 20,
         ),
         "engine": attr.string(
             doc = "Verification engine.",

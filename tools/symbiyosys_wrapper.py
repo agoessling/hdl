@@ -11,28 +11,31 @@ import sys
 import tempfile
 
 
-def get_config(modes, engine, top, srcs):
+def get_config(modes, engine, top, srcs, depth):
   config_str = ''
   config_str = '[tasks]\n'
-  tasks = ['task_{}'.format(m) for m in modes]
+  tasks = ['task_{:s}'.format(m) for m in modes]
   config_str += '\n'.join(tasks)
   config_str += '\n\n'
 
   config_str += '[options]\n'
-  options = ['task_{}: mode {}'.format(m, m) for m in modes]
+  options = ['task_{:s}: mode {:s}'.format(m, m) for m in modes]
+  config_str += '\n'.join(options)
+  config_str += '\n'
+  options = ['task_{:s}: depth {:d}'.format(m, depth) for m in modes]
   config_str += '\n'.join(options)
   config_str += '\n\n'
 
   config_str += '[engines]\n'
-  config_str += '{}\n'.format(engine)
+  config_str += '{:s}\n'.format(engine)
   config_str += '\n'
 
   config_str += '[script]\n'
   for f in srcs:
     _, extension = os.path.splitext(f)
     sv_flag = ' -sv' if extension == '.sv' else ''
-    config_str += 'read -formal{} {}\n'.format(sv_flag, os.path.basename(f))
-  config_str += 'prep -top {}\n'.format(top)
+    config_str += 'read -formal{:s} -D{:s} {:s}\n'.format(sv_flag, top.upper(), os.path.basename(f))
+  config_str += 'prep -top {:s}\n'.format(top)
   config_str += '\n'
 
   config_str += '[files]\n'
@@ -46,6 +49,7 @@ def main():
   parser.add_argument('--modes', nargs='+', required=True, help='Task modes.')
   parser.add_argument('--engine', default='smtbmc', help='Proof engine.')
   parser.add_argument('--top', required=True, help='Top module name.')
+  parser.add_argument('--depth', type=int, default=20, help='Solver depth.')
   parser.add_argument('--vcd_dir', help='Directory for output trace files.')
   parser.add_argument('--ignore_failure', action='store_true',
       help='Do not report error code from Symbiyosys.')
@@ -55,7 +59,7 @@ def main():
 
   with tempfile.TemporaryDirectory() as directory:
     with open(os.path.join(directory, 'config.sby'), 'w') as f:
-      config = get_config(args.modes, args.engine, args.top, args.srcs)
+      config = get_config(args.modes, args.engine, args.top, args.srcs, args.depth)
       f.write(config)
 
     bin_path = '/usr/local/bin/'
