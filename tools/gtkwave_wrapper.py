@@ -50,10 +50,14 @@ def main():
       '--rcvar',
       'initial_window_y 1200',
   ]
-  try:
-    subprocess.run(gtkwave_args)
-  except KeyboardInterrupt:
-    pass
+
+  if vcd_files:
+    try:
+      subprocess.run(gtkwave_args)
+    except KeyboardInterrupt:
+      pass
+  else:
+    print('No traces in "{}" match {}.'.format(args.vcd_dir, args.tests))
 
 
 if __name__ == '__main__':
