@@ -1,7 +1,7 @@
 `default_nettype none
 
 module uart_tx #(
-    parameter BAUD_DIV /*verilator public*/ = int'(1e8 / 9600),
+    parameter BAUD_DIV /*verilator public*/ = 3,
     parameter DATA_BITS /*verilator public*/ = 8
 ) (
     input logic i_clk,
@@ -21,7 +21,7 @@ module uart_tx #(
   );
 
   localparam BITS = DATA_BITS + 2;
-  logic [BITS - 1:0] shift_reg;  // One start and stop bit.
+  logic [BITS - 2:0] shift_reg;  // One start and stop bit is naturally shifted in.
 
   enum logic [$clog2(BITS + 1) - 1:0] {  // One more state than bits.
     IDLE = 0,
@@ -34,9 +34,9 @@ module uart_tx #(
       state <= IDLE;
     end else if (state == IDLE && i_start) begin
       state <= START_BIT;
-      shift_reg <= {1'b1, i_data, 1'b0};
+      shift_reg <= {i_data, 1'b0};
     end else if (baud_strobe) begin
-      shift_reg <= {1'b1, shift_reg[BITS - 1: 1]};
+      shift_reg <= {1'b1, shift_reg[BITS - 2: 1]};
 
       if (state == STOP_BIT) begin
         state <= IDLE;
@@ -47,7 +47,7 @@ module uart_tx #(
   end
 
   always_comb begin
-    strobe_reset = state == IDLE;
+    strobe_reset = state == IDLE || i_reset;
     o_busy = state != IDLE;
 
     o_tx = shift_reg[0];
@@ -59,4 +59,56 @@ module uart_tx #(
   initial begin
     state = IDLE;
   end
+
+`ifdef FORMAL
+
+`ifdef UART_TX
+  `define ASSUME assume
+  `define COVER cover
+`else
+  `define ASSUME assert
+  `define COVER(args) /*cover(args)*/
+`endif
+
+  // Create flag for t<0.
+  logic f_past_valid;
+  initial f_past_valid = 0;
+  always_ff @(posedge i_clk) begin
+    f_past_valid <= 1;
+  end
+
+  localparam F_SEND_CYCLES = BAUD_DIV * (DATA_BITS + 2);
+  logic [$clog2(F_SEND_CYCLES + 1) - 1:0] f_clk_counter;
+  initial f_clk_counter = 0;
+  logic [DATA_BITS + 1:0] f_data;
+  initial f_data = 0;
+
+  always_ff @(posedge i_clk) begin
+    if (i_reset) begin
+      f_clk_counter <= 0;
+    end else if (i_start && !o_busy) begin
+      f_clk_counter <= 1;
+      f_data <= {1'b1, i_data, 1'b0};
+    end else if (f_clk_counter >= F_SEND_CYCLES) begin
+      f_clk_counter <= 0;
+    end else if (f_clk_counter > 0) begin
+      f_clk_counter <= f_clk_counter + 1;
+    end
+  end
+
+  always_comb begin
+    assert(o_busy == (f_clk_counter != 0));
+
+    if (f_clk_counter == 0) begin
+      assert(o_tx == 1);
+    end else begin
+      assert(o_tx == f_data[(f_clk_counter - 1) / BAUD_DIV]);
+    end
+  end
+
+  always_ff @(posedge i_clk) begin
+    `COVER(f_past_valid && !o_busy && !$past(i_reset) && $past(f_clk_counter) == F_SEND_CYCLES);
+  end
+
+`endif
 endmodule

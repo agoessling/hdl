@@ -14,6 +14,24 @@ verilator_cc_test(
     },
 )
 
+symbiyosys_test(
+    name = "prove_uart_tx",
+    srcs = [
+        "uart_tx.sv",
+        "strobe_div.sv",
+    ],
+    top = "uart_tx",
+    modes = ["prove", "cover"],
+    engine = "smtbmc",
+    depth = 33,
+)
+
+symbiyosys_trace(
+    name = "prove_uart_tx_trace",
+    test = ":prove_uart_tx",
+    testonly = True,
+)
+
 verilator_cc_test(
     name = "strobe_div",
     vsrcs = ["strobe_div.sv"],

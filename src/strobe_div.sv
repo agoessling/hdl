@@ -28,18 +28,20 @@ module strobe_div #(
 
   assign o_strobe = counter == WIDTH'(DIV - 1);
 
+`ifdef STROBE_DIV
+  `define ASSUME assume
+  `define COVER cover
+`else
+  `define ASSUME assert
+  `define COVER(args) /*cover(args)*/
+`endif
+
 `ifdef FORMAL
   // Create flag for t<0.
   logic f_past_valid;
   initial f_past_valid = 0;
   always_ff @(posedge i_clk)
     f_past_valid <= 1;
-
-  // Assume module in reset for t<0.
-  initial assume(i_reset);
-  always_comb
-    if (!f_past_valid)
-      assume(i_reset);
 
   // Ensure strobe is set when counter is at maximum.
   always_comb
@@ -55,5 +57,9 @@ module strobe_div #(
       assert(counter == 0);
     else
       assert(counter == $past(counter) + 1);
+
+  // Cover strobe working.
+  always_ff @(posedge i_clk)
+    `COVER(o_strobe == 1);
 `endif
 endmodule
