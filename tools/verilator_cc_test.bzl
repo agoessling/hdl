@@ -52,7 +52,7 @@ def verilator_cc_test(name, vsrcs, csrcs, vdeps = [], cdeps = [], params = {"NON
         native.cc_test(
             name = "test_" + verilator_lib_name,
             srcs = csrcs,
-            deps = cdeps + [":" + verilator_lib_name, "//src:test_bench", "@gtest//:gtest"],
+            deps = cdeps + [":" + verilator_lib_name, "//src/lib:test_bench", "@gtest//:gtest"],
             linkstatic = True,
             tags = [name],
         )
