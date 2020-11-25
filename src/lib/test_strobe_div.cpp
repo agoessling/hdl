@@ -1,54 +1,42 @@
-#include <atomic>
-#include <iostream>
-#include <string>
-#include <thread>
-
-#include "verilated.h"
 #include "gtest/gtest.h"
-
-#include "test_bench.h"
-
 #include "Vstrobe_div.h"
 #include "Vstrobe_div_strobe_div.h"
+#include "module_test_fixture.h"
 
-TEST(StrobeDivTests, InitiallyZero) {
-  TestBench<Vstrobe_div> tb;
+class StrobeDivTest : public ModuleTest<Vstrobe_div> {
+ protected:
+  int32_t div_;
 
-  int reset_value;
-  if (tb.module_.strobe_div->DIV == 1) {
+  StrobeDivTest() {
+    div_ = tb_.module_.strobe_div->DIV;
+  }
+};
+
+TEST_F(StrobeDivTest, InitiallyZero) {
+  int32_t reset_value;
+  if (div_ == 1) {
     reset_value = 1;
   } else {
     reset_value = 0;
   }
 
-  EXPECT_EQ(tb.module_.o_strobe, reset_value) << "Incorrect reset value.";
+  EXPECT_EQ(tb_.module_.o_strobe, reset_value) << "Incorrect reset value.";
 }
 
-TEST(StrobeDivTests, StrobeSequence) {
-  TestBench<Vstrobe_div> tb;
-
-  int div = tb.module_.strobe_div->DIV;
-
+TEST_F(StrobeDivTest, StrobeSequence) {
   // Check reset halfway through count.
-  for (int i = 0; i < div / 2; ++i) {
-    tb.tick();
+  for (int32_t i = 0; i < div_ / 2; ++i) {
+    tb_.tick();
   }
 
-  tb.module_.i_reset = 1;
-  tb.tick();
-  tb.module_.i_reset = 0;
+  tb_.module_.i_reset = 1;
+  tb_.tick();
+  tb_.module_.i_reset = 0;
 
-  for (int i = 0; i < 3 * div; ++i) {
-    int strobe = i % div == div - 1 ? 1 : 0;
-    ASSERT_EQ(tb.module_.o_strobe, strobe) << "Timestep: " << i;
+  for (int32_t i = 0; i < 3 * div_; ++i) {
+    int32_t strobe = i % div_ == div_ - 1 ? 1 : 0;
+    ASSERT_EQ(tb_.module_.o_strobe, strobe) << "Timestep: " << i;
 
-    tb.tick();
+    tb_.tick();
   }
-}
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  Verilated::commandArgs(argc, argv);
-
-  return RUN_ALL_TESTS();
 }

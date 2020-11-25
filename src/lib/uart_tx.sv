@@ -4,10 +4,10 @@ module uart_tx #(
     parameter BAUD_DIV /*verilator public*/ = 3,
     parameter DATA_BITS /*verilator public*/ = 8
 ) (
-    input logic i_clk,
-    input logic i_reset,
-    input logic [DATA_BITS - 1:0] i_data,
-    input logic i_start,
+    input wire logic i_clk,
+    input wire logic i_reset,
+    input wire logic [DATA_BITS - 1:0] i_data,
+    input wire logic i_start,
     output logic o_busy,
     output logic o_tx
 );
@@ -22,12 +22,12 @@ module uart_tx #(
 
   localparam BITS = DATA_BITS + 2;
   logic [BITS - 2:0] shift_reg;  // One start and stop bit is naturally shifted in.
+  initial shift_reg = 'b1;
 
-  enum logic [$clog2(BITS + 1) - 1:0] {  // One more state than bits.
-    IDLE = 0,
-    START_BIT = 1,
-    STOP_BIT = BITS
-  } state;
+  localparam IDLE = 0;
+  localparam START_BIT = 1;
+  localparam STOP_BIT = BITS;
+  logic [$clog2(BITS + 1) - 1:0] state;  // One more state than bits.
 
   always_ff @(posedge i_clk) begin
     if (i_reset) begin

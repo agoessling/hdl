@@ -1,4 +1,5 @@
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
+
 load("//tools:gtkwave_trace.bzl", "gtkwave_trace")
 
 def _tally_repetition(values, i):
@@ -31,7 +32,7 @@ def _ngrid_params(params):
 def _param_suffix(params):
     return "_" + "_".join([str(k) + str(v) for k, v in params.items()])
 
-def verilator_cc_test(name, vsrcs, csrcs, vdeps = [], cdeps = [], params = {"NONE": [""]}):
+def verilator_cc_test(name, module, csrcs, cdeps = [], params = {"NONE": [""]}):
     params_lists = _ngrid_params(params)
 
     for i in range(len(params_lists.values()[0])):
@@ -43,8 +44,7 @@ def verilator_cc_test(name, vsrcs, csrcs, vdeps = [], cdeps = [], params = {"NON
 
         verilator_cc_library(
             name = verilator_lib_name,
-            mtop = name,
-            srcs = vsrcs,
+            module = module,
             vopts = vopts,
             trace = True,
         )
@@ -52,7 +52,12 @@ def verilator_cc_test(name, vsrcs, csrcs, vdeps = [], cdeps = [], params = {"NON
         native.cc_test(
             name = "test_" + verilator_lib_name,
             srcs = csrcs,
-            deps = cdeps + [":" + verilator_lib_name, "//src/lib:test_bench", "@gtest//:gtest"],
+            deps = cdeps + [
+                ":" + verilator_lib_name,
+                "//src/lib:module_test_fixture",
+                "//src/lib:module_test_main",
+                "@gtest//:gtest",
+            ],
             linkstatic = True,
             tags = [name],
         )

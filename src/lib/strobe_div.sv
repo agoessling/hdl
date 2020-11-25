@@ -3,8 +3,8 @@
 module strobe_div #(
     parameter DIV /*verilator public*/ = 10
 ) (
-    input logic i_clk,
-    input logic i_reset,
+    input wire logic i_clk,
+    input wire logic i_reset,
     output logic o_strobe
 );
 

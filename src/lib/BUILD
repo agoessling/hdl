@@ -1,13 +1,49 @@
+load("@rules_symbiyosys//symbiyosys:defs.bzl", "symbiyosys_test", "symbiyosys_trace")
 load("@rules_verilator//verilator:defs.bzl", "verilator_cc_library")
+load("@rules_verilog//verilog:defs.bzl", "verilog_module")
+
 load("//tools:verilator_cc_test.bzl", "verilator_cc_test")
-load("//tools:symbiyosys_test.bzl", "symbiyosys_test", "symbiyosys_trace")
+
+cc_library(
+    name = "module_test_bench",
+    hdrs = ["module_test_bench.h"],
+    deps = ["@verilator_v4.104//:libverilator"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "module_test_fixture",
+    srcs = ["module_test_fixture.cpp"],
+    hdrs = ["module_test_fixture.h"],
+    deps = [
+        ":module_test_bench",
+        "@gtest//:gtest",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
+    name = "module_test_main",
+    srcs = ["module_test_main.cpp"],
+    deps = [
+        ":module_test_fixture",
+	"@argparse//:argparse",
+        "@gtest//:gtest",
+    ],
+    visibility = ["//visibility:public"],
+)
+
+verilog_module(
+    name = "uart_tx_module",
+    top = "uart_tx",
+    srcs = ["uart_tx.sv"],
+    deps = [":strobe_div_module"],
+    visibility = ["//visibility:public"],
+)
 
 verilator_cc_test(
     name = "uart_tx",
-    vsrcs = [
-        "uart_tx.sv",
-        "strobe_div.sv",
-    ],
+    module = ":uart_tx_module",
     csrcs = ["test_uart_tx.cpp"],
     params = {
         "BAUD_DIV": [3],
@@ -16,11 +52,7 @@ verilator_cc_test(
 
 symbiyosys_test(
     name = "prove_uart_tx",
-    srcs = [
-        "uart_tx.sv",
-        "strobe_div.sv",
-    ],
-    top = "uart_tx",
+    module = ":uart_tx_module",
     modes = ["prove", "cover"],
     engine = "smtbmc",
     depth = 33,
@@ -32,24 +64,25 @@ symbiyosys_trace(
     testonly = True,
 )
 
+verilog_module(
+    name = "strobe_div_module",
+    top = "strobe_div",
+    srcs = ["strobe_div.sv"],
+    visibility = ["//visibility:public"],
+)
+
 verilator_cc_test(
     name = "strobe_div",
-    vsrcs = ["strobe_div.sv"],
+    module = ":strobe_div_module",
     csrcs = ["test_strobe_div.cpp"],
     params = {
         "DIV": [2, 6, 7, 8, 100],
     },
 )
 
-cc_library(
-    name = "test_bench",
-    hdrs = ["test_bench.h"],
-)
-
 symbiyosys_test(
     name = "prove_strobe_div",
-    srcs = ["strobe_div.sv"],
-    top = "strobe_div",
+    module = ":strobe_div_module",
     modes = ["prove", "cover"],
     engine = "smtbmc",
 )

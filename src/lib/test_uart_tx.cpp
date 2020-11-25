@@ -1,46 +1,18 @@
-#include <unistd.h>
-
-#include <iostream>
 #include <optional>
-#include <string>
 
-#include "verilated.h"
 #include "gtest/gtest.h"
 #include "Vuart_tx.h"
 #include "Vuart_tx_uart_tx.h"
-#include "test_bench.h"
+#include "module_test_fixture.h"
 
-std::string g_vcd_path;
-
-class UartTxTest : public ::testing::Test {
+class UartTxTest : public ModuleTest<Vuart_tx> {
  protected:
-  TestBench<Vuart_tx> tb_;
   int32_t baud_div_;
   int32_t num_bits_;
 
   UartTxTest() {
     baud_div_ = tb_.module_.uart_tx->BAUD_DIV;
     num_bits_ = tb_.module_.uart_tx->DATA_BITS + 2;
-
-    if (!g_vcd_path.empty()) {
-      // Prepare directory path.
-      std::string filename(g_vcd_path);
-      if (filename.back() != '/') {
-        filename += "/";
-      }
-
-      // Append filename based on test name.
-      const ::testing::TestInfo * const test_info =
-          ::testing::UnitTest::GetInstance()->current_test_info();
-      filename += test_info->name();
-      filename += ".vcd";
-
-      tb_.OpenTrace(filename);
-    }
-  }
-
-  ~UartTxTest() override {
-    tb_.CloseTrace();
   }
 
   void SendByte(uint8_t byte, std::optional<int32_t> cycles = std::nullopt) {
@@ -104,27 +76,4 @@ TEST_F(UartTxTest, ResetDuringSend) {
   CheckReset();
 
   SendByte(0xAA);
-}
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  Verilated::commandArgs(argc, argv);
-
-  int c;
-  while ((c = getopt(argc, argv, "d:")) != -1) {
-    switch (c) {
-      case 'd':
-        g_vcd_path.assign(optarg);
-        printf("Got file name: %s\n", optarg);
-        break;
-      case '?':
-        fprintf(stderr, "Unknown option '-%c'.\n", optopt);
-        abort();
-      default:
-        fprintf(stderr, "Unhandled option '-%c'.\n", c);
-        abort();
-    }
-  }
-
-  return RUN_ALL_TESTS();
 }
