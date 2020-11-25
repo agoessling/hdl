@@ -1,5 +1,7 @@
-build -c opt
-build --cxxopt=-std=c++17
-build --cxxopt=-fdiagnostics-color=always
+common -c opt
+common --cxxopt=-std=c++17
+common --cxxopt=-fdiagnostics-color=always
+common --host_cxxopt=-std=c++17
+common --host_cxxopt=-fdiagnostics-color=always
 
 test --test_output=errors --action_env="GTEST_COLOR=1"
