@@ -4,6 +4,7 @@ def _gtkwave_trace_impl(ctx):
 
     args = ctx.actions.args()
     args.add('-d', vcd_dir.path)
+    args.add('--ignore_failure')
 
     ctx.actions.run(outputs = [vcd_dir], executable = ctx.executable.test, arguments = [args])
 

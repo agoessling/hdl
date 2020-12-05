@@ -13,6 +13,11 @@ int main(int argc, char *argv[]) {
   program.add_argument("-d", "--vcd_dir")
     .help("directory for VCD trace files.");
 
+  program.add_argument("--ignore_failure")
+    .default_value(false)
+    .implicit_value(true)
+    .help("do not return error code on failure.");
+
   try {
     program.parse_args(argc, argv);
   } catch (const std::runtime_error &err) {
@@ -27,5 +32,11 @@ int main(int argc, char *argv[]) {
     g_trace_directory = directory.value().c_str();
   }
 
-  return RUN_ALL_TESTS();
+  int return_code = RUN_ALL_TESTS();
+
+  if (program.get<bool>("--ignore_failure")) {
+    return 0;
+  }
+
+  return return_code;
 }
