@@ -6,15 +6,17 @@
 class StrobeDivTest : public ModuleTest<Vstrobe_div> {
  protected:
   int32_t div_;
+  int32_t reset_val_;
 
   StrobeDivTest() {
     div_ = tb_.module_.strobe_div->DIV;
+    reset_val_ = tb_.module_.strobe_div->RESET_VAL;
   }
 };
 
 TEST_F(StrobeDivTest, InitiallyZero) {
   int32_t reset_value;
-  if (div_ == 1) {
+  if (reset_val_ == div_ - 1) {
     reset_value = 1;
   } else {
     reset_value = 0;
@@ -33,7 +35,7 @@ TEST_F(StrobeDivTest, StrobeSequence) {
   tb_.tick();
   tb_.module_.i_reset = 0;
 
-  for (int32_t i = 0; i < 3 * div_; ++i) {
+  for (int32_t i = reset_val_; i < 3 * div_ + reset_val_; ++i) {
     int32_t strobe = i % div_ == div_ - 1 ? 1 : 0;
     ASSERT_EQ(tb_.module_.o_strobe, strobe) << "Timestep: " << i;
 

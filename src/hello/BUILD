@@ -17,10 +17,9 @@ verilator_cc_test(
     name = "hello",
     module = ":hello_module",
     csrcs = ["test_hello.cpp"],
-    params = {
-        "BAUD": [25000000],
-        "FREP": [100000],
-    },
+    param_cases = [
+        {"BAUD": 25000000, "FREP": 100000},
+    ],
 )
 
 vivado_project(

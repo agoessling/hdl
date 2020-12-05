@@ -30,15 +30,11 @@ def _ngrid_params(params):
     return new_params
 
 def _param_suffix(params):
-    return "_" + "_".join([str(k) + str(v) for k, v in params.items()])
+    return "_" + "_".join([str(k) + str(v) for k, v in params.items()]) if params else ""
 
-def verilator_cc_test(name, module, csrcs, cdeps = [], params = {"NONE": [""]}):
-    params_lists = _ngrid_params(params)
-
-    for i in range(len(params_lists.values()[0])):
-        params = {k: v[i] for k, v in params_lists.items()}
-
-        vopts = ["-Wall"] + ["-G{}={}".format(k, v) for k, v in params.items() if v]
+def verilator_cc_test(name, module, csrcs, cdeps = [], param_cases = [{}]):
+    for params in param_cases:
+        vopts = ["-Wall"] + ["-G{}={}".format(k, v) for k, v in params.items()]
 
         verilator_lib_name = name + _param_suffix(params)
 

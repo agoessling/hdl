@@ -45,9 +45,9 @@ verilator_cc_test(
     name = "uart_tx",
     module = ":uart_tx_module",
     csrcs = ["test_uart_tx.cpp"],
-    params = {
-        "BAUD_DIV": [3],
-    },
+    param_cases = [
+        {"BAUD_DIV": 3},
+    ],
 )
 
 symbiyosys_test(
@@ -75,20 +75,50 @@ verilator_cc_test(
     name = "strobe_div",
     module = ":strobe_div_module",
     csrcs = ["test_strobe_div.cpp"],
+    param_cases = [
+        {"DIV": 2, "RESET_VAL": 0},
+        {"DIV": 2, "RESET_VAL": 1},
+        {"DIV": 6, "RESET_VAL": 0},
+        {"DIV": 6, "RESET_VAL": 3},
+        {"DIV": 7, "RESET_VAL": 0},
+        {"DIV": 7, "RESET_VAL": 6},
+        {"DIV": 8, "RESET_VAL": 0},
+        {"DIV": 8, "RESET_VAL": 4},
+        {"DIV": 100, "RESET_VAL": 0},
+        {"DIV": 100, "RESET_VAL": 73},
+    ],
+)
+
+symbiyosys_test(
+    name = "prove_strobe_div_DIV10_RESET_VAL0",
+    module = ":strobe_div_module",
+    modes = ["prove", "cover"],
+    engine = "smtbmc",
     params = {
-        "DIV": [2, 6, 7, 8, 100],
+        "DIV": "10",
+        "RESET_VAL": "0",
     },
 )
 
 symbiyosys_test(
-    name = "prove_strobe_div",
+    name = "prove_strobe_div_DIV10_RESET_VAL3",
     module = ":strobe_div_module",
     modes = ["prove", "cover"],
     engine = "smtbmc",
+    params = {
+        "DIV": "10",
+        "RESET_VAL": "3",
+    },
 )
 
 symbiyosys_trace(
-    name = "prove_strobe_div_trace",
-    test = ":prove_strobe_div",
+    name = "prove_strobe_div_trace_DIV10_RESET_VAL0",
+    test = ":prove_strobe_div_DIV10_RESET_VAL0",
+    testonly = True,
+)
+
+symbiyosys_trace(
+    name = "prove_strobe_div_trace_DIV10_RESET_VAL3",
+    test = ":prove_strobe_div_DIV10_RESET_VAL3",
     testonly = True,
 )
