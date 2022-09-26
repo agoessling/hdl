@@ -23,6 +23,14 @@ cc_library(
 )
 
 cc_library(
+    name = "module_checker",
+    srcs = ["module_checker.cpp"],
+    hdrs = ["module_checker.h"],
+    deps = ["@verilator_v4.104//:libverilator"],
+    visibility = ["//visibility:public"],
+)
+
+cc_library(
     name = "module_test_main",
     srcs = ["module_test_main.cpp"],
     deps = [
@@ -31,6 +39,26 @@ cc_library(
         "@gtest//:gtest",
     ],
     visibility = ["//visibility:public"],
+)
+
+verilog_module(
+    name = "uart_rx_module",
+    top = "uart_rx",
+    srcs = ["uart_rx.sv"],
+    deps = [":strobe_div_module"],
+    visibility = ["//visibility:public"],
+)
+
+verilator_cc_test(
+    name = "uart_rx",
+    module = ":uart_rx_module",
+    csrcs = ["test_uart_rx.cpp"],
+    cdeps = [":module_checker"],
+    param_cases = [
+        {"BAUD_DIV": 3},
+        {"BAUD_DIV": 8},
+        {"BAUD_DIV": 29},
+    ],
 )
 
 verilog_module(
